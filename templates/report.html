@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="margin: 48px; max-width: 640px; min-width: 320px; font-size: 16px">
+
+{% if show_nav %}
+<div style="margin-bottom: 48px">
+    <button onclick="prev()" style="margin-right: 64px; width: 64px">
+        &#x2190; Prev
+    </button>
+    <button onclick="topics()" style="margin-right: 64px; width: 64px">
+        &#x2191; Topics
+    </button>
+    <button onclick="next()" style="width: 64px">
+        Next &#x2192;
+    </button>
+</div>
+{% endif %}
+
+{% for sec_name, sec_data in record %}
+    <div id="{{sec_name}}" style="margin-bottom: 16pt">
+        <b>{{sec_name.strip('_').capitalize()}}:</b><br>
+        <div style="font-family: serif; font-size: 18px">{{sec_data}}</div>
+    </div>
+{% endfor %}
+
+</div>
+<script type="text/javascript">
+    function prev() {
+        $.post( "/prev", function() {
+            location.reload();
+        });
+    }
+    function next() {
+        $.post( "/next", function() {
+            location.reload();
+        });
+    }
+    function topics(){
+        window.location.href = "/navigate";
+    }
+</script>
+{% endblock %}

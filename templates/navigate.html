@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="margin: 48px; max-width: 480px; min-width: 320px">
+<P>Select a topic:</P>
+{% for topic in all_topics %}
+    <a href="topic/{{topic}}" style="margin: 12pt">{{topic}}</a>
+{% endfor %}
+</div>
+{% endblock %}
