@@ -5,14 +5,22 @@ Log out from the website:
 <form style="margin: 4px" action="logout">
     <input type="submit" value="Logout">
 </form>
-
 <br>
 <br>
-Upload a topics file here:
+Upload a topics file:
 <form style="margin: 4px" action="upload" method=post enctype=multipart/form-data>
     <p>
         <input type=file name=file>
         <input type=submit value=Upload>
+    </p>
+</form>
+<br>
+<br>
+Access a report:
+<form style="margin: 4px" action="report" method=get enctype=multipart/form-data>
+    <p>
+        <input type=text name="_id">
+        <input type=submit value="Access">
     </p>
 </form>
 </div>

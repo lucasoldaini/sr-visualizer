@@ -93,9 +93,14 @@ def navigate():
     else:
         return flask.redirect(flask.url_for('home'))
 
+@app.route('/report', methods=['GET'])
 @app.route('/report/<_id>', methods=['GET'])
 @login_required
-def report(_id):
+def report(_id=None):
+
+    if _id is None:
+        _id = flask.request.args.get('_id', None)
+
     report = coll.find_one({'_id': _id})
     if report is not None:
         return flask.render_template('report.html', show_nav=False,
@@ -141,7 +146,7 @@ def topic(topic=None):
     return flask.render_template('report.html', record=record, show_nav=True)
 
 
-@app.route('/next', methods=['POST'])
+@app.route('/next_report', methods=['POST'])
 def next_report():
     is_last_pos = (flask.session['topic_position'] ==
                    len(flask.session['topic_data']) - 1)
@@ -149,22 +154,17 @@ def next_report():
     if not is_last_pos:
         flask.session['topic_position'] += 1
 
-    return flask.Response(200)
+    return flask.Response({'OK', ''})
 
 
-@app.route('/prev', methods=['POST'])
+@app.route('/prev_report', methods=['POST'])
 def prev_report():
 
     is_first_pos = (flask.session['topic_position'] == 0)
     if not is_first_pos:
         flask.session['topic_position'] -= 1
 
-    return flask.Response(200)
-
-
-@app.route('/test', methods=['GET', 'POST'])
-def test():
-    return str(flask.request.args)
+    return flask.Response({'OK', ''})
 
 
 if __name__ == '__main__':

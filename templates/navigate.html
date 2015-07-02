@@ -6,4 +6,14 @@
     <a href="topic/{{topic}}" style="margin: 12pt">{{topic}}</a>
 {% endfor %}
 </div>
+<div style="margin: 48px; max-width: 480px; min-width: 320px">
+    <button onclick="reset()" style="margin-right: 64px; width: 64px">
+        Reset
+    </button>
+</div>
+<script type="text/javascript">
+    function reset(){
+        window.location.href = "/reset";
+    }
+</script>
 {% endblock %}
