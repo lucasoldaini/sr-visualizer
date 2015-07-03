@@ -18,8 +18,8 @@
 
 {% for sec_name, sec_data in record %}
     <div id="{{sec_name}}" style="margin-bottom: 16pt">
-        <b>{{sec_name.strip('_').capitalize()}}:</b><br>
-        <div style="font-family: serif; font-size: 18px">{{sec_data}}</div>
+        <b>{{sec_name.strip('_').capitalize()}}</b> <span></span><br>
+        <div style="font-family: serif; font-size: 18px" onmouseup="getSelectionPosition()">{{sec_data}}</div>
     </div>
 {% endfor %}
 
@@ -30,13 +30,32 @@
             location.reload();
         });
     }
+
     function next() {
         $.post( "/next_report", function() {
             location.reload();
         });
     }
+
     function topics(){
         window.location.href = "/navigate";
+    }
+
+    function getSelectionPosition () {
+        var sel = window.getSelection();
+
+        var spanTags = document.getElementsByTagName('span');
+        for (var i = spanTags.length - 1; i >= 0; i--) {
+            spanTags[i].textContent = "";
+        }
+
+        var targetText = sel.baseNode.parentElement.parentElement.children[1]
+
+        if (sel.baseOffset < sel.focusOffset) {
+            targetText.textContent = "(selection: " + sel.baseOffset + ", " + sel.focusOffset + ")";
+        }else if (sel.baseOffset > sel.focusOffset) {
+            targetText.textContent = "(selection: " + sel.focusOffset + ", " + sel.baseOffset + ")";
+        }
     }
 </script>
 {% endblock %}
