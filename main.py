@@ -17,6 +17,7 @@ coll = (pymongo.MongoClient()
         .get_database('safety-reports')
         .get_collection('all-orig'))
 
+server_session = {}
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -26,13 +27,13 @@ def allowed_file(filename):
 def is_valid_login(username, password):
     return username in config.users and password == config.users[username]
 
-
 def login_required(method):
     @wraps(method)
     def wrapper(*args, **kwargs):
-        if 'username' in flask.session:
+        if flask.session.get('username', None) in server_session:
             return method(*args, **kwargs)
         else:
+            flask.session.clear()
             return flask.redirect(flask.url_for('login'))
     return wrapper
 
@@ -46,7 +47,8 @@ def home():
 @app.route('/logout', methods=['GET'])
 @login_required
 def logout():
-    flask.session.pop('username', None)
+    un = flask.session.pop('username', None)
+    server_session.pop(un, None)
     return flask.redirect(flask.url_for('login'))
 
 
@@ -56,7 +58,9 @@ def login():
     if flask.request.method == 'POST':
         comb = flask.request.form['username'], flask.request.form['password']
         if is_valid_login(*comb):
-            flask.session['username'] = comb[0]
+            un = str(comb[0])
+            flask.session['username'] = un
+            server_session.setdefault(un, {})
         else:
             error = 'Invalid username/password'
     # the code below is executed if the request method
@@ -70,9 +74,10 @@ def login():
 @app.route('/upload', methods=['POST'])
 @login_required
 def upload():
+    un = flask.session['username']
     file_obj = flask.request.files['file']
     if file_obj:
-        flask.session['all_topics'] = json.load(file_obj)
+        server_session[un]['all_topics'] = json.load(file_obj)
         return flask.redirect(flask.url_for('navigate'))
     else:
         return flask.redirect(flask.url_for('home'))
@@ -81,12 +86,13 @@ def upload():
 @app.route('/navigate', methods=['GET'])
 @login_required
 def navigate():
+    un = flask.session['username']
 
     # reset current topic
-    flask.session.pop('topic_data', None)
-    flask.session.pop('topic_position', None)
+    server_session[un].pop('topic_data', None)
+    server_session[un].pop('topic_position', None)
 
-    all_topics = flask.session.get('all_topics', None)
+    all_topics = server_session[un].get('all_topics', None)
     if all_topics is not None:
         return flask.render_template('navigate.html',
                                      all_topics=sorted(all_topics.keys()))
@@ -97,6 +103,7 @@ def navigate():
 @app.route('/report/<_id>', methods=['GET'])
 @login_required
 def report(_id=None):
+    un = flask.session['username']
 
     if _id is None:
         _id = flask.request.args.get('_id', None)
@@ -113,9 +120,11 @@ def report(_id=None):
 @app.route('/reset', methods=['GET'])
 @login_required
 def reset():
-    flask.session.pop('all_topics', None)
-    flask.session.pop('topic_data', None)
-    flask.session.pop('topic_position', None)
+    un = flask.session['username']
+
+    server_session[un].pop('all_topics', None)
+    server_session[un].pop('topic_data', None)
+    server_session[un].pop('topic_position', None)
     return flask.redirect(flask.url_for('home'))
 
 
@@ -123,24 +132,25 @@ def reset():
 @app.route('/topic/<topic>', methods=['GET'])
 @login_required
 def topic(topic=None):
+    un = flask.session['username']
 
-    if flask.session.get('all_topics', None) is None:
+    if server_session[un].get('all_topics', None) is None:
         flask.redirect(flask.url_for('home'))
 
     if topic is None:
-        topic = flask.session.get('current_topic', None)
+        topic = server_session[un].get('current_topic', None)
         if topic is None:
             return flask.redirect(url_for('navigate'))
         else:
             return flask.redirect(flask.url_for('topic', topic=topic))
     else:
-        flask.session['current_topic'] = topic
-        flask.session['topic_data'] = flask.session['all_topics'][topic]
+        server_session[un]['current_topic'] = topic
+        server_session[un]['topic_data'] = server_session[un]['all_topics'][topic]
 
-    if flask.session.get('topic_position', None) is None:
-        flask.session['topic_position'] = 0
+    if server_session[un].get('topic_position', None) is None:
+        server_session[un]['topic_position'] = 0
 
-    _id = flask.session['topic_data'][flask.session['topic_position']]
+    _id = server_session[un]['topic_data'][server_session[un]['topic_position']]
     record = sorted(coll.find_one({'_id': _id}).iteritems())
 
     return flask.render_template('report.html', record=record, show_nav=True)
@@ -148,21 +158,24 @@ def topic(topic=None):
 
 @app.route('/next_report', methods=['POST'])
 def next_report():
-    is_last_pos = (flask.session['topic_position'] ==
-                   len(flask.session['topic_data']) - 1)
+    un = flask.session['username']
+
+    is_last_pos = (server_session[un]['topic_position'] ==
+                   len(server_session[un]['topic_data']) - 1)
 
     if not is_last_pos:
-        flask.session['topic_position'] += 1
+        server_session[un]['topic_position'] += 1
 
     return flask.Response({'OK', ''})
 
 
 @app.route('/prev_report', methods=['POST'])
 def prev_report():
+    un = flask.session['username']
 
-    is_first_pos = (flask.session['topic_position'] == 0)
+    is_first_pos = (server_session[un]['topic_position'] == 0)
     if not is_first_pos:
-        flask.session['topic_position'] -= 1
+        server_session[un]['topic_position'] -= 1
 
     return flask.Response({'OK', ''})
 
